@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const axios = require('axios');
 
 exports.handler = async (event) => {
-  const webhookUrl = 'URL_DEL_WEBHOOK_DE_ZAPIER';
+  const webhookUrl = 'https://hooks.zapier.com/hooks/catch/19611852/2u1ew1y/';
 
   // 1. Input Validation
   try {
