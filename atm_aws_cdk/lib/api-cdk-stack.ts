@@ -9,21 +9,21 @@ export class ATMStack extends Stack {
 
     // Lambda para depositar dinero
     const lambdaDepositarDinero = new Function(this, 'LambdaDepositarDinero', {
-      runtime: Runtime.NODEJS_20_X,
+      runtime: Runtime.NODEJS_16_X,
       handler: 'deposito.handler',
       code: Code.fromAsset('lambda'),
     })
 
     //Lambda para retirar dinero
     const lambdaRetirarDinero = new Function(this, 'LambdaRetirarDinero', {
-      runtime: Runtime.NODEJS_20_X,
+      runtime: Runtime.NODEJS_16_X,
       handler: 'retiro.handler',
       code: Code.fromAsset('lambda'),
     })
 
     // Lambda para cambiar la clave de la tarjeta de debito
     const lambdaCambiarClave = new Function(this, 'LambdaCambiarClave', {
-      runtime: Runtime.NODEJS_20_X,
+      runtime: Runtime.NODEJS_16_X,
       handler: 'cambiarClave.handler',
       code: Code.fromAsset('lambda'),
     })

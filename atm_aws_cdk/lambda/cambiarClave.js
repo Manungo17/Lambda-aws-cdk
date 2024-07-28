@@ -1,7 +1,9 @@
-
 const AWS = require('aws-sdk');
+const axios = require('axios');
 
 exports.handler = async (event) => {
+  const webhookUrl = 'URL_DEL_WEBHOOK_DE_ZAPIER';
+
   // 1. Input Validation
   try {
     const { accountId, oldPassword, newPassword } = JSON.parse(event.body);
@@ -34,6 +36,12 @@ exports.handler = async (event) => {
   }
 
   // 3. Construct Success Response
+  // Notificar a Zapier
+  await axios.post(webhookUrl, {
+    action: 'cambiarClave',
+    accountId: accountId,
+  });
+
   return {
     statusCode: 200,
     body: JSON.stringify({ message: 'Password changed successfully' }),
