@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const axios = require('axios');
 
 exports.handler = async (event) => {
-  const webhookUrl = 'https://hooks.zapier.com/hooks/catch/19611852/2u1ew1y/';
+  const webhookUrl = 'URL_DEL_WEBHOOK_DE_ZAPIER';
 
   // 1. Input Validation
   try {
@@ -21,7 +21,7 @@ exports.handler = async (event) => {
   }
 
   // 2. Authenticate User (Connect to Cognito or User Pool)
-  const cognitoServiceProvider = new AWS.CognitoIdentityServiceProvider({apiVersion: '2016-11-13'});
+  const cognitoServiceProvider = new AWS.CognitoIdentityServiceProvider({ apiVersion: '2016-11-13' });
   try {
     await cognitoServiceProvider.changeUserPassword({
       AccountId: accountId,

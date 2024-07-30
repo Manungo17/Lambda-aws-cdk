@@ -1,47 +1,64 @@
 const axios = require('axios');
+const sqlite3 = require('sqlite3').verbose();
 
 exports.handler = async (event) => {
-  const webhookUrl = 'https://hooks.zapier.com/hooks/catch/19611852/2u1ew1y/';
-
-  const transaccion = JSON.parse(event.body);
-
-  const transactionDB = {
-    numeroCuenta: "123456",
-    monto: 100.00,
-    estado: "completed",
-    timestamp: new Date().toISOString()
-  };
+  const webhookUrl = 'URL_DEL_WEBHOOK_DE_ZAPIER';
   
-  // Conectarse a mysql
-  const mysql = require('mysql');
+  const transaccion = JSON.parse(event.body);
+  
+  const db = new sqlite3.Database('/path/to/your/database.db');
 
-  const connection = mysql.createConnection({
-    host: 'localhost',   
-    user: 'root',
-    password: 'root',
-    database: 'mydb' //3306
-  });
-  const monto = transaccion.monto;
-
-  if (transactionDB.monto < monto) {
-    const saldo = transactionDB.monto - monto;
-
-    // Notificar a Zapier
-    await axios.post(webhookUrl, {
-      action: 'retiro',
-      cuenta: transactionDB.numeroCuenta,
-      monto: monto,
-      saldo: saldo
+  try {
+    const transactionDB = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM cuenta WHERE numeroCuenta = ?', [transaccion.numeroCuenta], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row);
+        }
+      });
     });
 
+    const monto = transaccion.monto;
+
+    if (transactionDB.monto >= monto) {
+      const saldo = transactionDB.monto - monto;
+
+      // Actualizar el monto de la cuenta en la base de datos
+      await new Promise((resolve, reject) => {
+        db.run('UPDATE cuenta SET monto = monto - ? WHERE numeroCuenta = ?', [monto, transaccion.numeroCuenta], function(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      // Notificar a Zapier
+      await axios.post(webhookUrl, {
+        action: 'retiro',
+        cuenta: transaccion.numeroCuenta,
+        monto: monto,
+        saldo: saldo
+      });
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: "Retiro exitoso", saldo })
+      };
+    } else {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "No tiene suficiente saldo" })
+      };
+    }
+  } catch (error) {
     return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Retiro exitoso", saldo })
+      statusCode: 500,
+      body: JSON.stringify({ message: error.message })
     };
-  } else {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ message: "No tiene suficiente saldo" })
-    };
+  } finally {
+    db.close();
   }
 };

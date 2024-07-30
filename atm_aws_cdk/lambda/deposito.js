@@ -1,59 +1,59 @@
 const axios = require('axios');
+const sqlite3 = require('sqlite3').verbose();
 
 exports.handler = async (event) => {
-    const webhookUrl = 'https://hooks.zapier.com/hooks/catch/19611852/2u1ew1y/';
-    
-    // Lógica actual de la Lambda
-    const transaccion = JSON.parse(event.body);
+  const webhookUrl = 'URL_DEL_WEBHOOK_DE_ZAPIER';
+  
+  const transaccion = JSON.parse(event.body);
+  
+  const db = new sqlite3.Database('/path/to/your/database.db');
 
-    const transactionDB = {
-        numeroCuenta: "123456",
-        monto: 100.00,
-        estado: "completed",
-        timestamp: new Date().toISOString()
-    };
-
-    // Conectarse a MySQL (asegúrate de tener el código correcto para esto)
-    // const mysql = require('mysql');
-    // const connection = mysql.createConnection({
-    //     host: 'localhost',   
-    //     user: 'root',
-    //     password: 'root',
-    //     database: 'mydb' //3306
-    // });
-    // const monto = transaccion.monto;
-
-    // if (transactionDB.monto < monto) {
-    //     const saldo = transactionDB.monto - monto;
-
-    //     // Notificar a Zapier
-    //     await axios.post(webhookUrl, {
-    //         action: 'deposito',
-    //         cuenta: transactionDB.numeroCuenta,
-    //         monto: monto,
-    //         saldo: saldo
-    //     });
-
-    //     return {
-    //         statusCode: 200,
-    //         body: JSON.stringify({ message: "Retiro exitoso", saldo })
-    //     };
-    // } else {
-    //     return {
-    //         statusCode: 400,
-    //         body: JSON.stringify({ message: "No tiene suficiente saldo" })
-    //     };
-    // }
-
-    // Notificar a Zapier
-    await axios.post(webhookUrl, {
-        action: 'deposito',
-        cuenta: transactionDB.numeroCuenta,
-        monto: transaccion.monto,
+  try {
+    const objCuenta = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM cuenta WHERE numeroCuenta = ?', [transaccion.cuenta], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row);
+        }
+      });
     });
 
-    return {
+    if (objCuenta.monto > transaccion.monto) {
+      // Actualizar el monto de la cuenta en la base de datos
+      await new Promise((resolve, reject) => {
+        db.run('UPDATE cuenta SET monto = monto + ? WHERE numeroCuenta = ?', [transaccion.monto, transaccion.cuenta], function(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      // Notificar a Zapier
+      await axios.post(webhookUrl, {
+        action: 'deposito',
+        cuenta: transaccion.cuenta,
+        monto: transaccion.monto,
+      });
+
+      return {
         statusCode: 200,
-        body: JSON.stringify({ message: "Deposito por realizar" })
+        body: JSON.stringify({ message: "Depósito realizado" })
+      };
+    } else {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Monto insuficiente" })
+      };
+    }
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: error.message })
     };
+  } finally {
+    db.close();
+  }
 };

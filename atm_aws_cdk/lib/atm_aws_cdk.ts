@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { AtmAwsCdkStack } from '../lib/atm_aws_cdk-stack';
+import { AtmAwsCdkStack } from '../lib/atm_aws_cdk.-stack';
 
 const app = new cdk.App();
 new AtmAwsCdkStack(app, 'AtmAwsCdkStack', {
